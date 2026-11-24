@@ -31,7 +31,6 @@ const aiOptions={method:"POST",headers:{"content-type":"application/json"},body:
 let ai;
 for(let attempt=1;attempt<=3;attempt++){ai=await fetch(aiUrl,aiOptions);if(ai.ok)break;const errorText=await ai.text();console.error("Gemini error",ai.status,errorText);if(![429,500,502,503,504].includes(ai.status)||attempt===3)process.exit(1);console.log("Transient Gemini HTTP",ai.status,"retry",attempt+1,"in",attempt*3,"seconds");await new Promise(resolve=>setTimeout(resolve,attempt*3000));}
 if(!ai?.ok){console.error("Gemini retries exhausted");process.exit(1)}
-const result=await ai.json();
 if(!ai.ok){console.error("Gemini error",ai.status,await ai.text());process.exit(1)}
 const result=await ai.json();const raw=result.candidates?.[0]?.content?.parts?.[0]?.text;if(!raw){console.log("AI declined/no content");process.exit(0)}
 let article;try{article=JSON.parse(raw)}catch{console.error("Invalid model JSON",raw);process.exit(1)}
