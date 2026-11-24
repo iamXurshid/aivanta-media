@@ -1,7 +1,7 @@
 // AIVANTA DEMO ADMIN — temporary client-side test only. Not secure for production.
 const $=id=>document.getElementById(id);
 const DEMO_EMAIL='xurshid@aivanta.com';
-const DEMO_PASSWORD='AivantaDemo2026!';
+const DEMO_PASSWORD='demo2026';
 const STORAGE_KEY='aivanta_demo_articles_v1';
 const slugify=s=>String(s||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 function msg(id,t){$(id).textContent=t}
