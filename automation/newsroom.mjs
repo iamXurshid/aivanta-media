@@ -1,6 +1,6 @@
 // Agent 1: RSS news scout -> Gemini editorial -> Supabase publishing
 const feeds=[
- ["Reuters Tech","https://feeds.reuters.com/reuters/technologyNews"],
+ ["Reuters Tech","https://news.google.com/rss/search?q=when:7d+site:reuters.com/technology&ceid=US:en&hl=en-US&gl=US"],
  ["BBC Tech","https://feeds.bbci.co.uk/news/technology/rss.xml"],
  ["The Verge","https://www.theverge.com/rss/index.xml"],
  ["TechCrunch","https://techcrunch.com/feed/"],
@@ -12,7 +12,7 @@ for(const k of env) if(!process.env[k]) {console.error("Missing secret:",k);proc
 const cutoff=Date.now()-24*60*60*1000;
 function decode(s){return s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,"$1").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'")}
 function getTag(xml,tag){const m=xml.match(new RegExp("<"+tag+"[^>]*>([\\s\\S]*?)</"+tag+">","i"));return m?decode(m[1].replace(/<[^>]*>/g,"").trim()):""}
-function parseFeed(xml,source){const items=xml.match(/<(item|entry)[\s\S]*?<\/\1>/gi)||[];return items.map(x=>({source,title:getTag(x,"title"),link:(x.match(/<link[^>]*>([^<]+)<\/link>/i)||x.match(/<link[^>]+href=["']([^"']+)/i)||[])[1],date:getTag(x,"pubDate")||getTag(x,"published")||getTag(x,"updated"),desc:getTag(x,"description")||getTag(x,"summary")||getTag(x,"content"),raw:x})).filter(x=>x.title&&x.link&&Date.parse(x.date)>cutoff).map(x=>({...x,source}))}
+function parseFeed(xml,source){const items=xml.match(/<(item|entry)[\s\S]*?<\/\1>/gi)||[];return items.map(x=>({source,title:getTag(x,"title"),link:(x.match(/<link[^>]*>([^<]+)<\/link>/i)||x.match(/<link[^>]+href=["']([^"']+)/i)||[])[1],date:["pubDate","published","updated","dc:date","date"].map(tag=>getTag(x,tag)).find(v=>v&&Number.isFinite(Date.parse(v)))||"",desc:getTag(x,"description")||getTag(x,"summary")||getTag(x,"content"),raw:x})).filter(x=>x.title&&x.link&&Date.parse(x.date)>cutoff).map(x=>({...x,source}))}
 const collected=[];
 for(const [name,url] of feeds){try{const r=await fetch(url,{headers:{"user-agent":"AIVANTA-NewsBot/0.1"},signal:AbortSignal.timeout(12000)});if(!r.ok){console.log("feed skipped",name,"HTTP",r.status);continue}const xml=await r.text();const parsed=parseFeed(xml,name);console.log("feed diagnostics",name,"HTTP",r.status,"items",(xml.match(/<(item|entry)\b/gi)||[]).length,"recent",parsed.length);if(parsed.length)console.log("feed recent",name,parsed.slice(0,3).map(x=>x.title.replace(/\s+/g," ").slice(0,180)));collected.push(...parsed)}catch(e){console.log("feed skipped",name,e.message)}}
 console.log("recent feed items:",collected.length);
