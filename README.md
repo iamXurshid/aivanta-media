@@ -42,3 +42,7 @@ The `netlify/functions/articles.js` endpoint reads published articles from Supab
 - Push events are disabled to prevent code changes from consuming Gemini quota; use workflow dispatch for manual checks.
 - Each run makes at most one request per configured Gemini model. Daily-quota HTTP 429 responses stop AI generation/publishing immediately; transient limits may move to the single fallback model.
 - A successful workflow run is not proof of publication. Confirm a `Published:` log line or a newly published Supabase row.
+
+## Reuters RSS source replacement
+- Reuters' legacy `feeds.reuters.com` RSS endpoint is retired/unavailable. A Google News RSS search restricted to Reuters technology replaces it in both publisher and dashboard monitor.
+- The newsroom date parser also accepts `dc:date` and generic `date` when they contain a parseable timestamp.
