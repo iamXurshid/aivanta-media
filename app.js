@@ -12,7 +12,9 @@ function render(){
    const excerpt=escapeHTML(s.excerpt||'');
    const date=s.published_at?new Date(s.published_at).toLocaleDateString('en',{year:'numeric',month:'short',day:'numeric'}):'';
    const link=s.slug?'/article.html?slug='+encodeURIComponent(s.slug):'#';
-   return '<article class="story" data-category="'+category+'"><div class="art art1">✦</div><div class="meta">'+category.toUpperCase()+(date?' · '+escapeHTML(date):'')+'</div><h3><a href="'+link+'">'+title+'</a></h3><p>'+excerpt+'</p></article>';
+   let image='';try{const u=new URL(s.image_url||'');if(['http:','https:'].includes(u.protocol))image=u.href;}catch{}
+   const art=image?'<div class="art story-image"><img src="'+escapeHTML(image)+'" alt="'+title+'" loading="lazy"></div>':'<div class="art art1">✦</div>';
+   return '<article class="story" data-category="'+category+'">'+art+'<div class="meta">'+category.toUpperCase()+(date?' · '+escapeHTML(date):'')+'</div><h3><a href="'+link+'">'+title+'</a></h3><p>'+excerpt+'</p></article>';
  }).join('');
  empty.hidden=filtered.length>0;
  if(!filtered.length)articlesEl.innerHTML='<div class="empty">No published stories in this category yet.</div>';
