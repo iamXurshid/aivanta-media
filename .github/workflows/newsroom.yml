@@ -1,7 +1,7 @@
 name: AIVANTA Newsroom AI
 on:
   schedule:
-    - cron: "0 */2 * * *"
+    - cron: "17 */2 * * *"
   workflow_dispatch:
 concurrency:
   group: aivanta-newsroom
