@@ -24,3 +24,9 @@ Run `supabase_schema.sql` in the Supabase SQL Editor to create the `articles` ta
 
 ## Netlify article API configuration
 The `netlify/functions/articles.js` endpoint reads published articles from Supabase using a public anon/publishable key. In Netlify site environment variables, set `SUPABASE_URL` and `SUPABASE_ANON_KEY` (or `SUPABASE_PUBLISHABLE_KEY`). Never set the service-role key for this public read endpoint. The endpoint returns published articles only, ordered newest-first, capped at 50 and cached for 60 seconds.
+
+
+## RSS Source Monitor history
+- Analytics dashboard includes live RSS feed checks and optional 24-hour history (check counts, failures, last success, consecutive failure streak).
+- To enable history, run `rss_monitor_schema.sql` in Supabase SQL Editor. Then configure Netlify server environment variables `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` for the RSS monitor function only. The service-role key must remain server-side and never be added to browser code.
+- History writes are throttled to one record per feed per minute. Without these server-side variables, live feed checks still work, but history is disabled.
