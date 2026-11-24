@@ -23,7 +23,8 @@ exports.handler = async function handler(event) {
   }
 
   try {
-    const baseUrl = supabaseUrl.replace(/\\/$/, "");
+    let baseUrl = supabaseUrl;
+    while (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
     const url = new URL(baseUrl + "/rest/v1/articles");
     url.searchParams.set("select", "slug,title,excerpt,body,category,source_urls,image_url,published_at");
     url.searchParams.set("status", "eq.published");
