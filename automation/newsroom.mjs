@@ -14,7 +14,7 @@ function decode(s){return s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,"$1").replace(
 function getTag(xml,tag){const m=xml.match(new RegExp("<"+tag+"[^>]*>([\\s\\S]*?)</"+tag+">","i"));return m?decode(m[1].replace(/<[^>]*>/g,"").trim()):""}
 function parseFeed(xml,source){const items=xml.match(/<(item|entry)[\s\S]*?<\/\1>/gi)||[];return items.map(x=>({source,title:getTag(x,"title"),link:(x.match(/<link[^>]*>([^<]+)<\/link>/i)||x.match(/<link[^>]+href=["']([^"']+)/i)||[])[1],date:getTag(x,"pubDate")||getTag(x,"published")||getTag(x,"updated"),desc:getTag(x,"description")||getTag(x,"summary")||getTag(x,"content"),raw:x})).filter(x=>x.title&&x.link&&Date.parse(x.date)>cutoff).map(x=>({...x,source}))}
 const collected=[];
-for(const [name,url] of feeds){try{const r=await fetch(url,{headers:{"user-agent":"AIVANTA-NewsBot/0.1"},signal:AbortSignal.timeout(12000)});if(!r.ok)continue;collected.push(...parseFeed(await r.text(),name))}catch(e){console.log("feed skipped",name,e.message)}}
+for(const [name,url] of feeds){try{const r=await fetch(url,{headers:{"user-agent":"AIVANTA-NewsBot/0.1"},signal:AbortSignal.timeout(12000)});if(!r.ok){console.log("feed skipped",name,"HTTP",r.status);continue}const xml=await r.text();const parsed=parseFeed(xml,name);console.log("feed diagnostics",name,"HTTP",r.status,"items", (xml.match(/<(item|entry)\\b/gi)||[]).length,"recent",parsed.length);collected.push(...parsed)}catch(e){console.log("feed skipped",name,e.message)}}
 console.log("recent feed items:",collected.length);
 if(!collected.length)process.exit(0);
 const supabase=process.env.SUPABASE_URL.replace(/\/$/,""),key=process.env.SUPABASE_SERVICE_ROLE_KEY;
