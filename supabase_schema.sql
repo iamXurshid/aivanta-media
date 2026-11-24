@@ -7,6 +7,7 @@ create table if not exists public.articles (
  category text not null default 'AI',
  status text not null default 'draft' check(status in ('draft','published','archived')),
  source_urls text[] not null default '{}',
+ image_url text,
  published_at timestamptz,
  created_at timestamptz not null default now()
 );
