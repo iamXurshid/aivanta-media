@@ -49,7 +49,7 @@ function render(){
   const art=image?'<div class="art story-image"><img src="'+escapeHTML(image)+'" alt="'+title+'" loading="lazy"></div>':'<div class="art art1">✦</div>';
   return '<article class="story">'+art+'<div class="meta">'+category.toUpperCase()+(date?' · '+escapeHTML(date):'')+'</div><h3><a href="'+storyLink(s)+'">'+title+'</a></h3><p>'+excerpt+'</p><a class="card-read" href="'+storyLink(s)+'">Read story <span>↗</span></a></article>';
  }).join('');
- empty.hidden=filtered.length>0;
+ empty.hidden=true;
  if(!filtered.length)articlesEl.innerHTML='<div class="empty">'+(searchTerm?'No stories match your search. Try another keyword.':'No published stories in this category yet.')+'</div>';
 }
 filterButtons.forEach(btn=>btn.addEventListener('click',()=>{filterButtons.forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeFilter=btn.dataset.filter;render()}));
