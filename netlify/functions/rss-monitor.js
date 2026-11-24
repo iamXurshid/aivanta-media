@@ -1,6 +1,6 @@
 // Live RSS diagnostics, 24h history, and optional Telegram alerts.
 const FEEDS = [
-  ["Reuters Tech", "https://feeds.reuters.com/reuters/technologyNews"],
+  ["Reuters Tech", "https://news.google.com/rss/search?q=when:7d+site:reuters.com/technology&ceid=US:en&hl=en-US&gl=US"],
   ["BBC Tech", "https://feeds.bbci.co.uk/news/technology/rss.xml"],
   ["The Verge", "https://www.theverge.com/rss/index.xml"],
   ["TechCrunch", "https://techcrunch.com/feed/"],
