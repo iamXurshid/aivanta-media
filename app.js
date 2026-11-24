@@ -2,8 +2,6 @@ const filterButtons=[...document.querySelectorAll('[data-filter]')];
 const articlesEl=document.querySelector('#articles');
 const empty=document.querySelector('#empty');
 let stories=[];
-const DEMO_STORAGE_KEY='aivanta_demo_articles_v1';
-function getDemoStories(){try{return JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)||'[]').filter(a=>a.status==='published').map(a=>({...a,isDemo:true}));}catch{return [];}}
 let activeFilter='All';
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function render(){
@@ -13,15 +11,15 @@ function render(){
    const title=escapeHTML(s.title);
    const excerpt=escapeHTML(s.excerpt||'');
    const date=s.published_at?new Date(s.published_at).toLocaleDateString('en',{year:'numeric',month:'short',day:'numeric'}):'';
-   const link=s.isDemo?'#latest':(s.slug?'/article.html?slug='+encodeURIComponent(s.slug):'#');
-   return '<article class="story" data-category="'+category+'"><div class="art art1">✦</div><div class="meta">'+(s.isDemo?'DEMO PREVIEW · ':'')+category.toUpperCase()+(date?' · '+escapeHTML(date):'')+'</div><h3>'+(s.isDemo?title:'<a href="'+link+'">'+title+'</a>')+'</h3><p>'+excerpt+'</p></article>';
+   const link=s.slug?'/article.html?slug='+encodeURIComponent(s.slug):'#';
+   return '<article class="story" data-category="'+category+'"><div class="art art1">✦</div><div class="meta">'+category.toUpperCase()+(date?' · '+escapeHTML(date):'')+'</div><h3><a href="'+link+'">'+title+'</a></h3><p>'+excerpt+'</p></article>';
  }).join('');
  empty.hidden=filtered.length>0;
  if(!filtered.length)articlesEl.innerHTML='<div class="empty">No published stories in this category yet.</div>';
 }
 filterButtons.forEach(btn=>btn.addEventListener('click',()=>{filterButtons.forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeFilter=btn.dataset.filter;render()}));
 async function loadStories(){
- try{const res=await fetch('/.netlify/functions/articles');if(!res.ok)throw new Error('API request failed');const data=await res.json();stories=[...(Array.isArray(data)?data:[]),...getDemoStories()];render();}
+ try{const res=await fetch('/.netlify/functions/articles');if(!res.ok)throw new Error('API request failed');const data=await res.json();stories=Array.isArray(data)?data:[];render();}
  catch(err){articlesEl.innerHTML='<div class="empty">Stories could not be loaded right now. Please try again later.</div>';console.error('AIVANTA article feed:',err);}
 }
 loadStories();
