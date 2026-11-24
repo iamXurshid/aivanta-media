@@ -36,3 +36,9 @@ The `netlify/functions/articles.js` endpoint reads published articles from Supab
 - Configure Netlify server-side environment variables: `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`, alongside the existing Supabase service-role settings.
 - Run the updated `rss_monitor_schema.sql` in Supabase to create the private alert-state table. Keep service-role credentials and Telegram token out of browser code and Git.
 - AI diagnosis is not part of this alert implementation yet.
+
+## Newsroom AI quota protection
+- The scheduled scout/publish job runs every 2 hours (12 scheduled runs/day), rather than every 5 minutes.
+- Push events are disabled to prevent code changes from consuming Gemini quota; use workflow dispatch for manual checks.
+- Each run makes at most one request per configured Gemini model. Daily-quota HTTP 429 responses stop AI generation/publishing immediately; transient limits may move to the single fallback model.
+- A successful workflow run is not proof of publication. Confirm a `Published:` log line or a newly published Supabase row.
