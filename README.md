@@ -30,3 +30,9 @@ The `netlify/functions/articles.js` endpoint reads published articles from Supab
 - Analytics dashboard includes live RSS feed checks and optional 24-hour history (check counts, failures, last success, consecutive failure streak).
 - To enable history, run `rss_monitor_schema.sql` in Supabase SQL Editor. Then configure Netlify server environment variables `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` for the RSS monitor function only. The service-role key must remain server-side and never be added to browser code.
 - History writes are throttled to one record per feed per minute. Without these server-side variables, live feed checks still work, but history is disabled.
+
+## Telegram RSS alerts
+- Alerts fire after three consecutive recorded failures for a feed and send a recovery notification when it returns to healthy.
+- Configure Netlify server-side environment variables: `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`, alongside the existing Supabase service-role settings.
+- Run the updated `rss_monitor_schema.sql` in Supabase to create the private alert-state table. Keep service-role credentials and Telegram token out of browser code and Git.
+- AI diagnosis is not part of this alert implementation yet.
