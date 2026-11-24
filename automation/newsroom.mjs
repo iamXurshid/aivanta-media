@@ -26,24 +26,29 @@ for(const n of collected){const slug=n.title.toLowerCase().replace(/[^a-z0-9]+/g
 if(!picked.length){console.log("No unseen news candidates");process.exit(0)}
 const candidate=picked.slice(0,3);
 const prompt=`You are AIVANTA's English-language technology news editor. From the candidate RSS stories below, select at most ONE genuinely newsworthy, factual, recent story (skip if minor, duplicate, unclear or unsupported). Write an original concise article based only on provided candidate information. Return ONLY valid JSON with fields: title (max 90 chars), slug (lowercase hyphenated), excerpt (1-2 sentences), body (Markdown, 450-750 words, no invented quotes/details; if details unavailable be transparent), category (one of AI, Models, Agents, Tools, Robotics, Tech), source_urls (array of exact candidate URLs), image_url (use a candidate image URL only if present, otherwise empty string). Do not claim you independently verified anything. Candidates:\n${candidate.map(n=>JSON.stringify({source:n.source,title:n.title,url:n.link,summary:n.desc.slice(0,1500)})).join("\n")}`;
+// Keep API usage bounded: one attempt per model, and stop immediately on daily quota exhaustion.
 const models=["gemini-3.8-flash","gemini-3.5-flash-lite"];
 let ai=null;
 for(const model of models){
  const aiUrl="https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent?key="+encodeURIComponent(process.env.GEMINI_API_KEY);
  const aiOptions={method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:"application/json",temperature:0.35}})};
- for(let attempt=1;attempt<=2;attempt++){
-  try{ai=await fetch(aiUrl,{...aiOptions,signal:AbortSignal.timeout(20000)});}catch(e){console.error("Gemini",model,"network/timeout error",e.message);if(attempt===2)break;await new Promise(resolve=>setTimeout(resolve,attempt*3000));continue}
-  if(ai.ok)break;
-  const errorText=await ai.text();console.error("Gemini",model,"HTTP",ai.status,errorText);
-  if(![429,500,502,503,504].includes(ai.status))process.exit(1);
-  if(attempt===2)break;
-  await new Promise(resolve=>setTimeout(resolve,attempt*3000));
+ try{ai=await fetch(aiUrl,{...aiOptions,signal:AbortSignal.timeout(20000)});}catch(e){console.error("Gemini",model,"network/timeout error",e.message);continue}
+ if(ai.ok){console.log("Gemini model used:",model);break}
+ const errorText=await ai.text();
+ console.error("Gemini",model,"HTTP",ai.status,errorText.slice(0,1200));
+ if(ai.status===429){
+  if(/daily|per.day|quota exceeded|GenerateRequestsPerDay|limit: 20/i.test(errorText)){
+   console.log("Gemini daily quota exhausted; AI generation and publishing skipped for this run.");
+   process.exit(0);
+  }
+  // Transient rate limit: do not retry the same model; try the fallback once.
+  continue;
  }
- if(ai?.ok){console.log("Gemini model used:",model);break}
- console.log("Model failed; trying fallback model",model);
+ if([500,502,503,504].includes(ai.status))continue;
+ console.error("Non-retryable Gemini response; no article published.");
+ process.exit(1);
 }
-if(!ai?.ok){console.error("All Gemini model fallbacks exhausted");process.exit(1)}
-if(!ai.ok){console.error("Gemini error",ai.status,await ai.text());process.exit(1)}
+if(!ai?.ok){console.error("All Gemini models failed; no article published.");process.exit(1)}
 const result=await ai.json();const raw=result.candidates?.[0]?.content?.parts?.[0]?.text;if(!raw){console.log("AI declined/no content");process.exit(0)}
 let article;try{article=JSON.parse(raw)}catch{console.error("Invalid model JSON",raw);process.exit(1)}
 if(!article.title||!article.body||!article.source_urls?.length){console.error("Incomplete article fields");process.exit(1)}
