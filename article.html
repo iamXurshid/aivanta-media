@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Story — AIVANTA</title><meta name="description" content="AIVANTA — The intelligence era."><link rel="stylesheet" href="styles.css"><style>
+.article-wrap{max-width:900px;margin:0 auto;padding:65px 6vw 90px}.back{color:var(--cyan);font-size:13px;letter-spacing:.08em}.article-meta{margin:35px 0 12px;color:var(--cyan);font-size:12px;letter-spacing:.14em;font-weight:800}.article-title{font-size:clamp(38px,6vw,72px);line-height:1.05;letter-spacing:-.05em;margin:0 0 22px}.article-excerpt{font-size:20px;color:#aab2c4;line-height:1.6;border-bottom:1px solid #222a3c;padding-bottom:28px}.article-body{font-size:18px;line-height:1.85;color:#d6dbea;margin-top:35px}.article-body p{margin:0 0 22px}.article-sources{border-top:1px solid #222a3c;margin-top:45px;padding-top:25px;color:var(--muted);font-size:14px}.article-sources a{color:var(--cyan);display:block;margin-top:8px;overflow-wrap:anywhere}.loading{color:var(--muted);padding:30px 0}
+</style></head><body><header class="top"><a class="logo" href="/">AI<span>VANTA</span></a><nav><a href="/#latest">Latest</a><a href="/#models">AI Models</a><a href="/#agents">Agents</a><a href="/#tools">Tools</a><a href="/#robotics">Robotics</a></nav><a class="subscribe" href="/#newsletter">Subscribe ↗</a></header>
+<main class="article-wrap"><a class="back" href="/#latest">← BACK TO STORIES</a><div id="article"><div class="loading">Loading story…</div></div></main><footer><a class="logo" href="/">AI<span>VANTA</span></a><span>Independent AI & technology media</span></footer>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+(async()=>{const root=document.querySelector('#article');const slug=new URLSearchParams(location.search).get('slug');if(!slug){root.innerHTML='<div class="empty">Story not found. <a class="back" href="/#latest">Go back</a></div>';return;}
+try{const res=await fetch('/.netlify/functions/articles');if(!res.ok)throw Error();const list=await res.json();const a=list.find(x=>x.slug===slug);if(!a){root.innerHTML='<div class="empty">This story is not published or could not be found. <a class="back" href="/#latest">Go back</a></div>';return;}
+const date=a.published_at?new Date(a.published_at).toLocaleDateString('en',{year:'numeric',month:'long',day:'numeric'}):'';
+const body=String(a.body||'').split(/\n\n+/).map(p=>'<p>'+esc(p).replace(/\n/g,'<br>')+'</p>').join('');
+const sources=Array.isArray(a.source_urls)?a.source_urls:[];
+root.innerHTML='<div class="article-meta">'+esc(a.category||'AI')+(date?' · '+esc(date):'')+'</div><h1 class="article-title">'+esc(a.title)+'</h1><p class="article-excerpt">'+esc(a.excerpt||'')+'</p><div class="article-body">'+(body||'<p>Full story coming soon.</p>')+'</div>'+(sources.length?'<div class="article-sources"><strong>Sources</strong>'+sources.map(u=>'<a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">'+esc(u)+'</a>').join('')+'</div>':'');
+document.title=esc(a.title)+' — AIVANTA';
+}catch(e){root.innerHTML='<div class="empty">Unable to load story right now. <a class="back" href="/#latest">Go back</a></div>';}
+})();
+</script></body></html>

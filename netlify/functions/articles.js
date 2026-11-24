@@ -4,7 +4,7 @@ exports.handler = async () => {
   if (!url || !key) return { statusCode: 500, body: JSON.stringify({ error: "Supabase environment variables are not configured." }) };
   try {
     const baseUrl = url.endsWith("/") ? url.slice(0, -1) : url;
-    const response = await fetch(baseUrl + "/rest/v1/articles?select=id,slug,title,excerpt,category,published_at&status=eq.published&order=published_at.desc&limit=30", {
+    const response = await fetch(baseUrl + "/rest/v1/articles?select=id,slug,title,excerpt,body,category,source_urls,published_at&status=eq.published&order=published_at.desc&limit=30", {
       headers: { apikey: key, Authorization: "Bearer " + key }
     });
     const body = await response.text();
