@@ -46,3 +46,13 @@ The `netlify/functions/articles.js` endpoint reads published articles from Supab
 ## Reuters RSS source replacement
 - Reuters' legacy `feeds.reuters.com` RSS endpoint is retired/unavailable. A Google News RSS search restricted to Reuters technology replaces it in both publisher and dashboard monitor.
 - The newsroom date parser also accepts `dc:date` and generic `date` when they contain a parseable timestamp.
+
+
+## Follower news submissions & Telegram moderation
+
+1. Run `follower-submissions-schema.sql` in Supabase SQL Editor (adds `source_label` and private `news_submissions` queue table).
+2. Set Netlify server-only environment variables: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (moderation group chat ID), `TELEGRAM_ADMIN_IDS` (comma-separated numeric Telegram user IDs allowed to approve/cancel), `TELEGRAM_WEBHOOK_SECRET` (random 32+ character token), `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `AIVANTA_SITE_URL`. Never expose the bot token, webhook secret, Gemini key, or service-role key in frontend files.
+3. After Netlify deploy, set the Telegram webhook to `https://YOUR-SITE/.netlify/functions/telegram-moderation`, using Telegram Bot API `setWebhook` with `secret_token` equal to the configured webhook secret and allowed updates `callback_query`. Example (replace the placeholders; do not commit the token): `https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook?url=https://YOUR-SITE/.netlify/functions/telegram-moderation&secret_token=YOUR_WEBHOOK_SECRET&allowed_updates=%5B%22callback_query%22%5D`.
+4. Public homepage includes Submit News. Submission is saved and sent to Telegram with ACCEPT/CANCEL buttons. Only IDs listed in `TELEGRAM_ADMIN_IDS` can act on them. ACCEPT invokes Gemini, publishes immediately, and labels the article `With Follower`; CANCEL prevents publishing.
+
+**Security note:** The webhook rejects requests without a matching secret token. Keep `news_submissions` without public RLS policies; Netlify functions access it via service role.
