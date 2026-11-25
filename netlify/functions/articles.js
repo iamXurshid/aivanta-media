@@ -26,7 +26,7 @@ exports.handler = async function handler(event) {
     let baseUrl = supabaseUrl;
     while (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
     const url = new URL(baseUrl + "/rest/v1/articles");
-    url.searchParams.set("select", "slug,title,excerpt,body,category,source_urls,image_url,published_at,views");
+    url.searchParams.set("select", "slug,title,excerpt,body,category,source_urls,source_label,image_url,published_at,views");
     url.searchParams.set("status", "eq.published");
     url.searchParams.set("order", "published_at.desc");
     url.searchParams.set("limit", "50");
