@@ -9,6 +9,10 @@ const heroLede=document.querySelector('#hero-lede');
 const heroLink=document.querySelector('#hero-link');
 const heroTag=document.querySelector('#hero-tag');
 let stories=[];
+const fmtNum=n=>Number(n||0).toLocaleString('en-US');
+function updateDataStrip(){const views=stories.reduce((sum,s)=>sum+Number(s.views||0),0);const counts={};stories.forEach(s=>{const c=s.category||'AI';counts[c]=(counts[c]||0)+1;});const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];const week=stories.filter(s=>s.published_at&&Date.now()-new Date(s.published_at).getTime()<7*86400000).length;document.querySelector('#data-stories').textContent=fmtNum(stories.length);document.querySelector('#data-views').textContent=fmtNum(views);document.querySelector('#data-category').textContent=top?top[0]:'—';document.querySelector('#data-week').textContent=fmtNum(week);}
+function updateMostRead(){const popular=[...stories].sort((a,b)=>Number(b.views||0)-Number(a.views||0)).slice(0,5);const el=document.querySelector('#most-read');const list=document.querySelector('#most-read-list');if(!popular.length){el.hidden=true;return;}el.hidden=false;list.innerHTML=popular.map((s,i)=>'<a class="popular-item" href="'+storyLink(s)+'"><span class="popular-rank">0'+(i+1)+'</span><span class="popular-copy"><strong>'+escapeHTML(s.title)+'</strong><small>'+escapeHTML(s.category||'AI')+'</small></span><span class="popular-views">'+fmtNum(s.views)+' <small>reads</small></span></a>').join('');}
+
 let activeFilter='All';
 let searchTerm='';
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -56,7 +60,7 @@ filterButtons.forEach(btn=>btn.addEventListener('click',()=>{filterButtons.forEa
 document.querySelectorAll('[data-nav-filter]').forEach(link=>link.addEventListener('click',()=>{const target=link.dataset.navFilter;const btn=filterButtons.find(b=>b.dataset.filter===target);if(btn)btn.click();}));
 searchEl.addEventListener('input',()=>{searchTerm=searchEl.value;render();});
 async function loadStories(){
- try{const res=await fetch('/.netlify/functions/articles');if(!res.ok)throw new Error('API request failed (HTTP '+res.status+')');const data=await res.json();stories=Array.isArray(data)?data:[];updateHero();updateTrending();render();}
+ try{const res=await fetch('/.netlify/functions/articles');if(!res.ok)throw new Error('API request failed (HTTP '+res.status+')');const data=await res.json();stories=Array.isArray(data)?data:[];updateHero();updateTrending();updateDataStrip();updateMostRead();render();}
  catch(err){articlesEl.innerHTML='<div class="empty">Stories could not be loaded right now. Please try again later.</div>';countEl.textContent='News feed unavailable';console.error('AIVANTA article feed:',err);}
 }
 loadStories();
