@@ -8,6 +8,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 (async()=>{const root=document.querySelector('#article');const slug=new URLSearchParams(location.search).get('slug');if(!slug){root.innerHTML='<div class="empty">Story not found. <a class="back" href="/#latest">Go back</a></div>';return;}
 try{const res=await fetch('/.netlify/functions/articles');if(!res.ok)throw Error();const list=await res.json();const a=list.find(x=>x.slug===slug);if(!a){root.innerHTML='<div class="empty">This story is not published or could not be found. <a class="back" href="/#latest">Go back</a></div>';return;}
 const date=a.published_at?new Date(a.published_at).toLocaleDateString('en',{year:'numeric',month:'long',day:'numeric'}):'';
+// Count a page view asynchronously; this endpoint only increments published stories.\nfetch('/.netlify/functions/article-view',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug:a.slug}),keepalive:true}).catch(()=>{});
 const body=String(a.body||'').split(/\n\n+/).map(p=>'<p>'+esc(p).replace(/\n/g,'<br>')+'</p>').join('');
 const sources=Array.isArray(a.source_urls)?a.source_urls:[];
 let image='';try{const u=new URL(a.image_url||'');if(['http:','https:'].includes(u.protocol))image=u.href;}catch{}
