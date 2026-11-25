@@ -22,7 +22,7 @@ jobs:
           AIVANTA_SITE_URL: ${{ secrets.AIVANTA_SITE_URL }}
         run: |
           python - <<'PY'
-          import os,json,urllib.request,urllib.error
+          import os,json,urllib.request,urllib.error,html,urllib.parse
           from datetime import datetime,timezone,timedelta
           token=os.environ.get("TELEGRAM_BOT_TOKEN","")
           chat=os.environ.get("TELEGRAM_CHAT_ID","")
@@ -47,13 +47,17 @@ jobs:
           if not recent:lines.append("No new articles in the last 24 hours.")
           for i,a in enumerate(recent[:10],1):
               src=(a.get("source_urls") or [])
-              source=src[0] if src else "Source unknown"
-              link=(site+"/article.html?slug="+a.get("slug","")) if site else source
-              lines += [f"{i}) {a.get('title','Untitled')}",f"👁 {int(a.get('views') or 0)} views • 🕒 {local_time(a.get('published_at',''))}",f"🔎 Source: {source}",f"🔗 {link}",""]
+              source_url=src[0] if src else ""
+              source_name=urllib.parse.urlparse(source_url).netloc.replace("www.","") if source_url else "Unknown source"
+              article_url=(site+"/article.html?slug="+a.get("slug","")) if site else source_url
+              safe_title=html.escape(a.get("title","Untitled"))
+              source_link=f'<a href="{html.escape(source_url,quote=True)}">{html.escape(source_name)}</a>' if source_url else "Unknown source"
+              article_link=f'<a href="{html.escape(article_url,quote=True)}">Open article</a>' if article_url else "Link unavailable"
+              lines += [f"{i}) {safe_title}",f"👁 {int(a.get('views') or 0)} views • 🕒 {local_time(a.get('published_at',''))}",f"🔎 Source: {source_link}",f"🔗 {article_link}",""]
           lines += ["📊 TOTAL","Articles published: "+str(len(all_rows)),"Articles in last 24h: "+str(len(recent)),"Total views: "+str(total_views),"Views on 24h articles: "+str(recent_views)]
           msg="\n".join(lines)
           if len(msg)>3900:msg=msg[:3800]+"\n…"
-          payload=json.dumps({"chat_id":chat,"text":msg,"disable_web_page_preview":True}).encode()
+          payload=json.dumps({"chat_id":chat,"text":msg,"parse_mode":"HTML","disable_web_page_preview":True}).encode()
           req=urllib.request.Request("https://api.telegram.org/bot"+token+"/sendMessage",data=payload,headers={"Content-Type":"application/json"})
           try:
               with urllib.request.urlopen(req,timeout=20) as r:
