@@ -51,7 +51,7 @@ jobs:
           for i,a in enumerate(recent[:10],1):
               src=(a.get("source_urls") or [])
               source=src[0] if src else "Source not listed"
-              link=site+"/article.html?slug="+a.get("slug","")
+              link=(site+"/article.html?slug="+a.get("slug","")) if site else (src[0] if src else "Article link unavailable (AIVANTA_SITE_URL not configured)")
               lines += [f"{i}. {a.get('title','Untitled')}",f"👁 Views: {int(a.get('views') or 0)} | 🕒 {local_time(a.get('published_at',''))}",f"🌐 Source: {source}",f"🔗 {link}",""]
           lines += ["📊 TOTAL","Published articles: "+str(total_articles),"Views total: "+str(total_views),"Views on last-24h articles: "+str(today_views),"Articles last 24h: "+str(len(recent))]
           msg="\n".join(lines)
