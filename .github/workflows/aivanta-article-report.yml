@@ -1,0 +1,65 @@
+name: AIVANTA Article Analytics Report
+
+on:
+  schedule:
+    - cron: "0 3,14 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Send article statistics to Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          AIVANTA_SITE_URL: ${{ secrets.AIVANTA_SITE_URL }}
+        run: |
+          python - <<'PY'
+          import os,json,urllib.request,urllib.error
+          from datetime import datetime,timezone,timedelta
+          token=os.environ.get("TELEGRAM_BOT_TOKEN","")
+          chat=os.environ.get("TELEGRAM_CHAT_ID","")
+          db=os.environ.get("SUPABASE_URL","").rstrip("/")
+          key=os.environ.get("SUPABASE_SERVICE_ROLE_KEY","")
+          site=os.environ.get("AIVANTA_SITE_URL","").rstrip("/")
+          if not all([token,chat,db,key]):
+              raise SystemExit("Missing required secrets: Telegram token/chat or Supabase URL/service key")
+          def get(url):
+              req=urllib.request.Request(url,headers={"apikey":key,"Authorization":"Bearer "+key})
+              with urllib.request.urlopen(req,timeout=20) as r:return json.loads(r.read())
+          tz=timezone(timedelta(hours=5)); now=datetime.now(timezone.utc); cutoff=(now-timedelta(hours=24)).isoformat()
+          base=db+"/rest/v1/articles"
+          all_rows=get(base+"?select=slug,title,source_urls,published_at,views,status&status=eq.published&order=published_at.desc&limit=1000")
+          recent=[a for a in all_rows if a.get("published_at") and a["published_at"]>=cutoff]
+          total_views=sum(int(a.get("views") or 0) for a in all_rows)
+          recent_views=sum(int(a.get("views") or 0) for a in recent)
+          def local_time(v):
+              try:return datetime.fromisoformat(v.replace("Z","+00:00")).astimezone(tz).strftime("%H:%M")
+              except:return "?"
+          lines=["📰 AIVANTA | "+now.astimezone(tz).strftime("%d %b • %H:%M"),"","📝 Articles (24h)"]
+          if not recent:lines.append("No new articles in the last 24 hours.")
+          for i,a in enumerate(recent[:10],1):
+              src=(a.get("source_urls") or [])
+              source=src[0] if src else "Source unknown"
+              link=(site+"/article.html?slug="+a.get("slug","")) if site else source
+              lines += [f"{i}) {a.get('title','Untitled')}",f"👁 {int(a.get('views') or 0)} views • 🕒 {local_time(a.get('published_at',''))}",f"🔎 Source: {source}",f"🔗 {link}",""]
+          lines += ["📊 TOTAL","Articles published: "+str(len(all_rows)),"Articles in last 24h: "+str(len(recent)),"Total views: "+str(total_views),"Views on 24h articles: "+str(recent_views)]
+          msg="\n".join(lines)
+          if len(msg)>3900:msg=msg[:3800]+"\n…"
+          payload=json.dumps({"chat_id":chat,"text":msg,"disable_web_page_preview":True}).encode()
+          req=urllib.request.Request("https://api.telegram.org/bot"+token+"/sendMessage",data=payload,headers={"Content-Type":"application/json"})
+          try:
+              with urllib.request.urlopen(req,timeout=20) as r:
+                  result=json.loads(r.read())
+                  if not result.get("ok"):raise SystemExit("Telegram sendMessage failed")
+                  print("Article analytics report sent.")
+          except urllib.error.HTTPError as e:
+              print("Telegram API error:",e.code,e.read().decode("utf-8","replace"));raise
+          PY
